@@ -7,23 +7,22 @@
 
 using namespace std;
 
-// --- configuracion de arquitectura gpu ---
-#define NUM_HORMIGAS 1024     // puede ser masivo en gpu
-#define HILOS_POR_BLOQUE 256  // ajustalo segun tu grafica (64, 128, 256, 512)
+#define NUM_HORMIGAS 64
+#define HILOS_POR_BLOQUE 512
 
-// --- parametros de aco ---
-#define MAX_ITERACIONES 100
-#define ALPHA 1.0f
-#define BETA 2.0f
-#define EVAPORACION 0.5f
+// parametros
+#define MAX_ITERACIONES 2000
+#define ALPHA 2.2f
+#define BETA 1.9f
+#define EVAPORACION 0.7f
 #define Q 1000.0f
 #define PENALIZACION_B 1000.0f
 
-// --- limites fisicos de memoria estatica ---
-#define MAX_N 50
-#define MAX_PASOS 500
+// limites fisicos de memoria estatica
+#define MAX_N 128
+#define MAX_PASOS 1024
 
-// estructura estatica para la gpu (cero memoria dinamica)
+// estructura estatica para la gpu
 struct Hormiga {
     int nodo_inicial;
     int nodo_actual;
@@ -82,7 +81,7 @@ __global__ void mover_hormigas(Hormiga* colonia, const float* grafo, const float
             if (peso_arista > 0.0f) {
                 float tau = powf(feromonas[i * N + j], ALPHA);
                 
-                // penalizacion dinamica (opcion b)
+                // penalizacion dinamica
                 float veces_visitada = (float)hormiga.aristas_visitadas[i * N + j];
                 float castigo = 1.0f + (veces_visitada * PENALIZACION_B);
                 float eta = powf(1.0f / (peso_arista * castigo), BETA);
@@ -108,7 +107,7 @@ __global__ void mover_hormigas(Hormiga* colonia, const float* grafo, const float
             }
         }
 
-        // fallback en caso de errores de precision
+        // en caso de errores de precision
         if (siguiente_nodo == -1) {
             for (int j = 0; j < N; j++) {
                 if (grafo[i * N + j] > 0.0f) { siguiente_nodo = j; break; }
@@ -243,7 +242,7 @@ int main(int argc, char* argv[]) {
     float milisegundos = 0;
     cudaEventElapsedTime(&milisegundos, start, stop);
 
-    cout << "\n--- RESULTADO FINAL (CUDA) ---" << endl;
+    cout << "\n--- RESULTADO FINAL - CUDA ---" << endl;
     cout << "Distancia minima encontrada: " << mejor_distancia_global << endl;
     cout << "Tiempo de ejecucion en GPU: " << milisegundos << " ms" << endl;
     cout << "Ruta: ";
